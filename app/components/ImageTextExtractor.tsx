@@ -15,14 +15,14 @@ export default function ImageTextExtractor() {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
       setSelectedImage(file);
-      
+
       // Create preview URL
       const reader = new FileReader();
       reader.onload = (e) => {
         setImagePreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
-      
+
       // Reset previous results
       setExtractedText('');
       setProgress(0);
@@ -49,9 +49,37 @@ export default function ImageTextExtractor() {
 
       // Perform OCR
       const { data: { text } } = await worker.recognize(selectedImage);
+
+      // Define the important fields we want to extract
+      const impData = ['Model Name', 'Model Number', 'Serial Number'];
       
-      setExtractedText(text);
-      
+      // Split the extracted text into lines and remove empty lines
+      const extractedInfo = text.split('\n').filter(line => line.trim() !== '');
+
+      // Function to search for a keyword and return only its value
+      function searchStringInArray(keyword: string, lines: string[]) {
+        for (let j = 0; j < lines.length; j++) {
+          if (lines[j].toLowerCase().includes(keyword.toLowerCase())) {
+            const value = lines[j]
+              .replace(new RegExp(keyword, 'gi'), '') 
+              .replace(/[:]/g, '')                     
+              .trim();                                 
+            return value || 'Not found';
+          }
+        }
+        return 'Not found';
+      }
+
+      // CHANGED: Build result with ONLY values (no field names)
+      let result = '';
+      impData.forEach(keyword => {
+        const value = searchStringInArray(keyword, extractedInfo);
+        result += `${value}\n`;  // ← ONLY the value, no "keyword:" prefix
+      });
+
+      // Set the extracted and parsed text
+      setExtractedText(result || text);
+
       // Terminate worker
       await worker.terminate();
     } catch (error) {
@@ -71,7 +99,7 @@ export default function ImageTextExtractor() {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6">Image Text Extractor</h1>
-      
+
       {/* Upload Section */}
       <div className="mb-6">
         <label className="block mb-2 font-semibold">Upload Image or Screenshot:</label>
@@ -88,9 +116,9 @@ export default function ImageTextExtractor() {
         <div className="mb-6">
           <h2 className="text-xl font-semibold mb-3">Selected Image:</h2>
           <div className="relative w-full max-w-md border rounded">
-            <img 
-              src={imagePreview} 
-              alt="Selected" 
+            <img
+              src={imagePreview}
+              alt="Selected"
               className="w-full h-auto"
             />
           </div>
