@@ -1,12 +1,13 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { createWorker } from 'tesseract.js';
+import Image from "next/image";
+import { useState } from "react";
+import { createWorker } from "tesseract.js";
 
 export default function ImageTextExtractor() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>('');
-  const [extractedText, setExtractedText] = useState<string>('');
+  const [imagePreview, setImagePreview] = useState<string>("");
+  const [extractedText, setExtractedText] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
 
@@ -24,7 +25,7 @@ export default function ImageTextExtractor() {
       reader.readAsDataURL(file);
 
       // Reset previous results
-      setExtractedText('');
+      setExtractedText("");
       setProgress(0);
     }
   };
@@ -34,47 +35,51 @@ export default function ImageTextExtractor() {
     if (!selectedImage) return;
 
     setIsProcessing(true);
-    setExtractedText('');
+    setExtractedText("");
 
     try {
       // Create Tesseract worker
-      const worker = await createWorker('eng', 1, {
+      const worker = await createWorker("eng", 1, {
         logger: (m) => {
           console.log(m);
-          if (m.status === 'recognizing text') {
+          if (m.status === "recognizing text") {
             setProgress(Math.round(m.progress * 100));
           }
         },
       });
 
       // Perform OCR
-      const { data: { text } } = await worker.recognize(selectedImage);
+      const {
+        data: { text },
+      } = await worker.recognize(selectedImage);
 
       // Define the important fields we want to extract
-      const impData = ['Model Name', 'Model Number', 'Serial Number'];
-      
+      const impData = ["Model Name", "Model Number", "Serial Number"];
+
       // Split the extracted text into lines and remove empty lines
-      const extractedInfo = text.split('\n').filter(line => line.trim() !== '');
+      const extractedInfo = text
+        .split("\n")
+        .filter((line) => line.trim() !== "");
 
       // Function to search for a keyword and return only its value
       function searchStringInArray(keyword: string, lines: string[]) {
         for (let j = 0; j < lines.length; j++) {
           if (lines[j].toLowerCase().includes(keyword.toLowerCase())) {
             const value = lines[j]
-              .replace(new RegExp(keyword, 'gi'), '') 
-              .replace(/[:]/g, '')                     
-              .trim();                                 
-            return value || 'Not found';
+              .replace(new RegExp(keyword, "gi"), "")
+              .replace(/[:]/g, "")
+              .trim();
+            return value || "Not found";
           }
         }
-        return 'Not found';
+        return "Not found";
       }
 
-      // CHANGED: Build result with ONLY values (no field names)
-      let result = '';
-      impData.forEach(keyword => {
+      // Build result with ONLY values (no field names)
+      let result = "";
+      impData.forEach((keyword) => {
         const value = searchStringInArray(keyword, extractedInfo);
-        result += `${value}\n`;  // ← ONLY the value, no "keyword:" prefix
+        result += `${value}\n`; // ← ONLY the value, no "keyword:" prefix
       });
 
       // Set the extracted and parsed text
@@ -83,8 +88,8 @@ export default function ImageTextExtractor() {
       // Terminate worker
       await worker.terminate();
     } catch (error) {
-      console.error('Error extracting text:', error);
-      setExtractedText('Error occurred while extracting text.');
+      console.error("Error extracting text:", error);
+      setExtractedText("Error occurred while extracting text.");
     } finally {
       setIsProcessing(false);
     }
@@ -93,7 +98,7 @@ export default function ImageTextExtractor() {
   // Copy text to clipboard
   const copyToClipboard = () => {
     navigator.clipboard.writeText(extractedText);
-    alert('Text copied to clipboard!');
+    alert("Text copied to clipboard!");
   };
 
   return (
@@ -102,7 +107,9 @@ export default function ImageTextExtractor() {
 
       {/* Upload Section */}
       <div className="mb-6">
-        <label className="block mb-2 font-semibold">Upload Image or Screenshot:</label>
+        <label className="block mb-2 font-semibold">
+          Upload Image or Screenshot:
+        </label>
         <input
           type="file"
           accept="image/*"
@@ -116,10 +123,12 @@ export default function ImageTextExtractor() {
         <div className="mb-6">
           <h2 className="text-xl font-semibold mb-3">Selected Image:</h2>
           <div className="relative w-full max-w-md border rounded">
-            <img
+            <Image
               src={imagePreview}
               alt="Selected"
-              className="w-full h-auto"
+              width={500}
+              height={300}
+              className="object-contain rounded"
             />
           </div>
         </div>
