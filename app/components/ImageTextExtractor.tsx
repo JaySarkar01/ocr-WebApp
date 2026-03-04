@@ -3,7 +3,15 @@
 import Image from "next/image";
 import { useState, useCallback, useRef } from "react";
 import { createWorker } from "tesseract.js";
-import { FiUpload, FiCopy, FiCheck, FiX, FiLoader, FiDownload, FiRefreshCw } from "react-icons/fi";
+import {
+  FiUpload,
+  FiCopy,
+  FiCheck,
+  FiX,
+  FiLoader,
+  FiDownload,
+  FiRefreshCw,
+} from "react-icons/fi";
 
 export default function ImageTextExtractor() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -13,7 +21,9 @@ export default function ImageTextExtractor() {
   const [progress, setProgress] = useState<number>(0);
   const [copySuccess, setCopySuccess] = useState<boolean>(false);
   const [dragActive, setDragActive] = useState<boolean>(false);
-  const [extractedFields, setExtractedFields] = useState<Record<string, string>>({});
+  const [extractedFields, setExtractedFields] = useState<
+    Record<string, string>
+  >({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Handle drag events
@@ -41,14 +51,14 @@ export default function ImageTextExtractor() {
   // Handle file selection
   const handleFile = (file: File) => {
     // Validate file type
-    if (!file.type.startsWith('image/')) {
-      alert('Please upload an image file');
+    if (!file.type.startsWith("image/")) {
+      alert("Please upload an image file");
       return;
     }
 
     // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
-      alert('File size should be less than 10MB');
+      alert("File size should be less than 10MB");
       return;
     }
 
@@ -82,7 +92,7 @@ export default function ImageTextExtractor() {
     setExtractedFields({});
     setProgress(0);
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   };
 
@@ -112,21 +122,30 @@ export default function ImageTextExtractor() {
       // Define the important fields we want to extract
       const importantFields = [
         { key: "Model Name", patterns: ["model name", "model", "product"] },
-        { key: "Model Number", patterns: ["model number", "model no", "part number", "p/n"] },
-        { key: "Serial Number", patterns: ["serial number", "serial no", "s/n", "sn"] }
+        {
+          key: "Model Number",
+          patterns: ["model number", "model no", "part number", "p/n"],
+        },
+        {
+          key: "Serial Number",
+          patterns: ["serial number", "serial no", "s/n", "sn"],
+        },
       ];
 
       // Split the extracted text into lines and clean them
       const lines = text
         .split("\n")
-        .map(line => line.trim())
-        .filter(line => line.length > 0);
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0);
 
       // Function to extract field value with improved pattern matching
-      function extractFieldValue(fieldConfig: typeof importantFields[0], lines: string[]) {
+      function extractFieldValue(
+        fieldConfig: (typeof importantFields)[0],
+        lines: string[],
+      ) {
         for (const line of lines) {
           const lineLower = line.toLowerCase();
-          
+
           for (const pattern of fieldConfig.patterns) {
             if (lineLower.includes(pattern)) {
               // Extract value after the pattern
@@ -134,7 +153,7 @@ export default function ImageTextExtractor() {
                 .replace(new RegExp(pattern, "gi"), "")
                 .replace(/[:=\-|]/g, "")
                 .trim();
-              
+
               // If value is empty, try to get next line
               if (!value) {
                 const lineIndex = lines.indexOf(line);
@@ -142,7 +161,7 @@ export default function ImageTextExtractor() {
                   return lines[lineIndex + 1].trim();
                 }
               }
-              
+
               return value || "Not found";
             }
           }
@@ -157,19 +176,21 @@ export default function ImageTextExtractor() {
       });
 
       setExtractedFields(fields);
-      
+
       // Also keep the full text for reference
       const fullText = importantFields
-        .map(field => `${field.key}: ${fields[field.key]}`)
-        .join('\n');
-      
+        .map((field) => `${field.key}: ${fields[field.key]}`)
+        .join("\n");
+
       setExtractedText(fullText);
 
       // Terminate worker
       await worker.terminate();
     } catch (error) {
       console.error("Error extracting text:", error);
-      setExtractedText("Error occurred while extracting text. Please try again.");
+      setExtractedText(
+        "Error occurred while extracting text. Please try again.",
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -182,17 +203,17 @@ export default function ImageTextExtractor() {
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
     } catch (err) {
-      alert('Failed to copy text');
+      alert("Failed to copy text");
     }
   };
 
   // Download extracted text as file
   const downloadText = () => {
-    const blob = new Blob([extractedText], { type: 'text/plain' });
+    const blob = new Blob([extractedText], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'extracted-text.txt';
+    a.download = "extracted-text.txt";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -233,7 +254,7 @@ export default function ImageTextExtractor() {
               onChange={handleImageChange}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             />
-            
+
             <div className="text-center">
               <FiUpload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
               <p className="text-lg font-medium text-gray-700 mb-2">
@@ -260,7 +281,7 @@ export default function ImageTextExtractor() {
                   <FiX className="w-5 h-5" />
                 </button>
               </div>
-              
+
               <div className="relative w-full rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
                 <div className="relative aspect-video">
                   <Image
@@ -327,7 +348,7 @@ export default function ImageTextExtractor() {
                   <h2 className="text-xl font-semibold text-gray-800">
                     Extracted Information
                   </h2>
-                  
+
                   <div className="flex gap-2">
                     <button
                       onClick={copyToClipboard}
@@ -349,7 +370,7 @@ export default function ImageTextExtractor() {
                         </>
                       )}
                     </button>
-                    
+
                     <button
                       onClick={downloadText}
                       className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-all"
@@ -365,7 +386,10 @@ export default function ImageTextExtractor() {
                   <div className="bg-white p-6 border-b">
                     <div className="grid gap-4">
                       {Object.entries(extractedFields).map(([key, value]) => (
-                        <div key={key} className="flex flex-col sm:flex-row sm:items-center">
+                        <div
+                          key={key}
+                          className="flex flex-col sm:flex-row sm:items-center"
+                        >
                           <span className="text-sm font-medium text-gray-500 sm:w-32">
                             {key}:
                           </span>
